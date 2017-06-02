@@ -5,6 +5,9 @@
 #include <SPI.h>
 #include <Wire.h>
 
+// Local project includes
+#include "wifi.h"
+
 #define OV2640_CAM
 
 // Camera class captures images from an arducam module.
@@ -145,8 +148,11 @@ class Camera {
 // Instantiate camera object
 Camera cam;
 
+// Instantiate wifi object
+//Wifi wifi;
+
 // Time to sleep
-const int sleep_time_in_seconds = 5;
+const int sleep_time_in_seconds = 10;
 
 // Arduino sketch setup function is called when this sketch starts running.
 void setup() {

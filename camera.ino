@@ -1,12 +1,16 @@
 
 // Capture image from camera every ten seconds and send to basestation.
 // Could send image as a series of bytes to server over a UDP connection.
+
+
+// Include local files
+#include "wifi.h"
+
+// Include third party libraries
 #include <ArduCAM.h>
 #include <SPI.h>
 #include <Wire.h>
 
-// Local project includes
-#include "wifi.h"
 
 #define OV2640_CAM
 
@@ -21,7 +25,7 @@ class Camera {
 
   public:
 
-  // Constructor initialized arducam
+  // Constructor initializes arducam
   Camera() 
     : arducam(OV2640, CS){
   }
@@ -149,7 +153,7 @@ class Camera {
 Camera cam;
 
 // Instantiate wifi object
-//Wifi wifi;
+Wifi wifi;
 
 // Time to sleep
 const int sleep_time_in_seconds = 10;
@@ -163,6 +167,9 @@ void setup() {
 
   // Initialize camera
   cam.init();
+
+  // Connect to wifi
+  wifi.connect();
 }
 
 // Arduino loop function called repeatedly while sketch is running

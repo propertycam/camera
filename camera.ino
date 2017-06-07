@@ -3,10 +3,11 @@
 // Could send image as a series of bytes to server over a UDP connection.
 
 
-// Include local files
+// Include local headers
 #include "wifi.h"
 
 // Include third party libraries
+#include <WiFiClient.h>
 #include <ArduCAM.h>
 #include <SPI.h>
 #include <Wire.h>
@@ -14,16 +15,16 @@
 
 #define OV2640_CAM
 
-// Camera class captures images from an arducam module.
+// Camera class captures images from an arducam module and sends to basestation
 class Camera {
 
   // Set GPIO16 as the slave select :
   const int CS = 16;
 
   // Wrapped ArduCAM object
-  ArduCAM arducam;
+  ArduCAM arducam;  
 
-  public:
+public:
 
   // Constructor initializes arducam
   Camera() 
@@ -64,14 +65,29 @@ class Camera {
     arducam.set_format(JPEG);
     arducam.InitCAM();
     arducam.OV2640_set_JPEG_size(OV2640_320x240);
-
     arducam.clear_fifo_flag();
+
+    // Connect to propertycam wifi network
+    Wifi wifi;
+    wifi.connect();
   }
 
   void capture(){
 
+    // Connect client to basestation (ie. server)
+    WiFiClient client;
+    byte basestation_ip[] = {192, 168, 1, 131};
+    uint16_t basestation_port = 50000;
+    int status = client.connect(basestation_ip, basestation_port);
+    if(status){
+      Serial.println("Connected to basestation");
+    } else {
+      Serial.print("Connection to basestation failed with status ");
+      Serial.println(status);
+    }
+
     // Buffer to store image bytes
-    const size_t buffer_size = 4096;
+    const size_t buffer_size = 1024;
     uint8_t buffer[buffer_size] = {0xFF};
   
     // Start capture
@@ -106,7 +122,7 @@ class Camera {
       temp_last = temp;
       temp =  SPI.transfer(0x00);
 
-      // If find jpeg end of image code 0xFFD9
+      // Check if jpeg end of image code 0xFFD9 was found
       if ( (temp == 0xD9) && (temp_last == 0xFF) )
       {
         // save the last 0xD9
@@ -114,6 +130,11 @@ class Camera {
         
         // Write the remaining bytes in the buffer
         Serial.println("End of image so write out buffer");
+
+        // If client connected then sned remaining bytes in the buffer to basestation
+        if(client.connected()){
+          client.write(&buffer[0], i);
+        }
         
         // Stop reading from camera buffer and break while loop
         arducam.CS_HIGH();
@@ -130,6 +151,13 @@ class Camera {
         {
           // Write buffer
           Serial.println("Buffer full so write out");
+
+          // If client connected then send buffer bytes to basestation
+          if(client.connected()){
+            //Serial.println("Send to basestation");
+            client.write(&buffer[0], buffer_size);
+          }
+          
           i = 0;
           buffer[i++] = temp;
         }
@@ -152,9 +180,6 @@ class Camera {
 // Instantiate camera object
 Camera cam;
 
-// Instantiate wifi object
-Wifi wifi;
-
 // Time to sleep
 const int sleep_time_in_seconds = 10;
 
@@ -168,8 +193,6 @@ void setup() {
   // Initialize camera
   cam.init();
 
-  // Connect to wifi
-  wifi.connect();
 }
 
 // Arduino loop function called repeatedly while sketch is running

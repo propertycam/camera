@@ -2,7 +2,7 @@
 #define WIFI_H
 
 #include <ESP8266WiFi.h>  // Defines WiFi class
-//#include <WiFiClient.h>
+
 
 class Wifi {
 
@@ -24,9 +24,9 @@ public:
         delay(500);
         Serial.print(".");
       }
-      Serial.println("WiFi connected");
-      Serial.println("");
+      Serial.print("WiFi connected, local IP is ");
       Serial.println(WiFi.localIP());
+      
     }
 
 };
